@@ -28,6 +28,8 @@ class _History extends ConsumerState<History> {
     super.initState();
     final pagination = ref.read(historyPaginationProvider);
 
+    final notifier = ref.read(historyProvider.notifier);
+
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
         pagination.fetchNextThrottled();
@@ -35,6 +37,7 @@ class _History extends ConsumerState<History> {
     });
 
     Future.microtask(() {
+      notifier.reset(condition: const HistorySearch());
       pagination.fetchNextThrottled();
     });
   }

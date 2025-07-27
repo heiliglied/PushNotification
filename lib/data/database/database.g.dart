@@ -36,11 +36,6 @@ class $NotificationTable extends Notification
   late final GeneratedColumn<String> contents = GeneratedColumn<String>(
       'contents', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _soundMeta = const VerificationMeta('sound');
-  @override
-  late final GeneratedColumn<String> sound = GeneratedColumn<String>(
-      'sound', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _alarmMeta = const VerificationMeta('alarm');
   @override
   late final GeneratedColumn<bool> alarm = GeneratedColumn<bool>(
@@ -49,17 +44,8 @@ class $NotificationTable extends Notification
       requiredDuringInsert: true,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("alarm" IN (0, 1))'));
-  static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
-  late final GeneratedColumn<bool> status = GeneratedColumn<bool>(
-      'status', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: true,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('CHECK ("status" IN (0, 1))'));
-  @override
-  List<GeneratedColumn> get $columns =>
-      [id, date, title, contents, sound, alarm, status];
+  List<GeneratedColumn> get $columns => [id, date, title, contents, alarm];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -91,23 +77,11 @@ class $NotificationTable extends Notification
     } else if (isInserting) {
       context.missing(_contentsMeta);
     }
-    if (data.containsKey('sound')) {
-      context.handle(
-          _soundMeta, sound.isAcceptableOrUnknown(data['sound']!, _soundMeta));
-    } else if (isInserting) {
-      context.missing(_soundMeta);
-    }
     if (data.containsKey('alarm')) {
       context.handle(
           _alarmMeta, alarm.isAcceptableOrUnknown(data['alarm']!, _alarmMeta));
     } else if (isInserting) {
       context.missing(_alarmMeta);
-    }
-    if (data.containsKey('status')) {
-      context.handle(_statusMeta,
-          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
-    } else if (isInserting) {
-      context.missing(_statusMeta);
     }
     return context;
   }
@@ -126,12 +100,8 @@ class $NotificationTable extends Notification
           .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
       contents: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}contents'])!,
-      sound: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}sound'])!,
       alarm: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}alarm'])!,
-      status: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}status'])!,
     );
   }
 
@@ -147,17 +117,13 @@ class NotificationData extends DataClass
   final DateTime date;
   final String title;
   final String contents;
-  final String sound;
   final bool alarm;
-  final bool status;
   const NotificationData(
       {required this.id,
       required this.date,
       required this.title,
       required this.contents,
-      required this.sound,
-      required this.alarm,
-      required this.status});
+      required this.alarm});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -165,9 +131,7 @@ class NotificationData extends DataClass
     map['date'] = Variable<DateTime>(date);
     map['title'] = Variable<String>(title);
     map['contents'] = Variable<String>(contents);
-    map['sound'] = Variable<String>(sound);
     map['alarm'] = Variable<bool>(alarm);
-    map['status'] = Variable<bool>(status);
     return map;
   }
 
@@ -177,9 +141,7 @@ class NotificationData extends DataClass
       date: Value(date),
       title: Value(title),
       contents: Value(contents),
-      sound: Value(sound),
       alarm: Value(alarm),
-      status: Value(status),
     );
   }
 
@@ -191,9 +153,7 @@ class NotificationData extends DataClass
       date: serializer.fromJson<DateTime>(json['date']),
       title: serializer.fromJson<String>(json['title']),
       contents: serializer.fromJson<String>(json['contents']),
-      sound: serializer.fromJson<String>(json['sound']),
       alarm: serializer.fromJson<bool>(json['alarm']),
-      status: serializer.fromJson<bool>(json['status']),
     );
   }
   @override
@@ -204,9 +164,7 @@ class NotificationData extends DataClass
       'date': serializer.toJson<DateTime>(date),
       'title': serializer.toJson<String>(title),
       'contents': serializer.toJson<String>(contents),
-      'sound': serializer.toJson<String>(sound),
       'alarm': serializer.toJson<bool>(alarm),
-      'status': serializer.toJson<bool>(status),
     };
   }
 
@@ -215,17 +173,13 @@ class NotificationData extends DataClass
           DateTime? date,
           String? title,
           String? contents,
-          String? sound,
-          bool? alarm,
-          bool? status}) =>
+          bool? alarm}) =>
       NotificationData(
         id: id ?? this.id,
         date: date ?? this.date,
         title: title ?? this.title,
         contents: contents ?? this.contents,
-        sound: sound ?? this.sound,
         alarm: alarm ?? this.alarm,
-        status: status ?? this.status,
       );
   NotificationData copyWithCompanion(NotificationCompanion data) {
     return NotificationData(
@@ -233,9 +187,7 @@ class NotificationData extends DataClass
       date: data.date.present ? data.date.value : this.date,
       title: data.title.present ? data.title.value : this.title,
       contents: data.contents.present ? data.contents.value : this.contents,
-      sound: data.sound.present ? data.sound.value : this.sound,
       alarm: data.alarm.present ? data.alarm.value : this.alarm,
-      status: data.status.present ? data.status.value : this.status,
     );
   }
 
@@ -246,16 +198,13 @@ class NotificationData extends DataClass
           ..write('date: $date, ')
           ..write('title: $title, ')
           ..write('contents: $contents, ')
-          ..write('sound: $sound, ')
-          ..write('alarm: $alarm, ')
-          ..write('status: $status')
+          ..write('alarm: $alarm')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, date, title, contents, sound, alarm, status);
+  int get hashCode => Object.hash(id, date, title, contents, alarm);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -264,9 +213,7 @@ class NotificationData extends DataClass
           other.date == this.date &&
           other.title == this.title &&
           other.contents == this.contents &&
-          other.sound == this.sound &&
-          other.alarm == this.alarm &&
-          other.status == this.status);
+          other.alarm == this.alarm);
 }
 
 class NotificationCompanion extends UpdateCompanion<NotificationData> {
@@ -274,49 +221,37 @@ class NotificationCompanion extends UpdateCompanion<NotificationData> {
   final Value<DateTime> date;
   final Value<String> title;
   final Value<String> contents;
-  final Value<String> sound;
   final Value<bool> alarm;
-  final Value<bool> status;
   const NotificationCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
     this.title = const Value.absent(),
     this.contents = const Value.absent(),
-    this.sound = const Value.absent(),
     this.alarm = const Value.absent(),
-    this.status = const Value.absent(),
   });
   NotificationCompanion.insert({
     this.id = const Value.absent(),
     required DateTime date,
     required String title,
     required String contents,
-    required String sound,
     required bool alarm,
-    required bool status,
   })  : date = Value(date),
         title = Value(title),
         contents = Value(contents),
-        sound = Value(sound),
-        alarm = Value(alarm),
-        status = Value(status);
+        alarm = Value(alarm);
   static Insertable<NotificationData> custom({
     Expression<int>? id,
     Expression<DateTime>? date,
     Expression<String>? title,
     Expression<String>? contents,
-    Expression<String>? sound,
     Expression<bool>? alarm,
-    Expression<bool>? status,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (date != null) 'date': date,
       if (title != null) 'title': title,
       if (contents != null) 'contents': contents,
-      if (sound != null) 'sound': sound,
       if (alarm != null) 'alarm': alarm,
-      if (status != null) 'status': status,
     });
   }
 
@@ -325,17 +260,13 @@ class NotificationCompanion extends UpdateCompanion<NotificationData> {
       Value<DateTime>? date,
       Value<String>? title,
       Value<String>? contents,
-      Value<String>? sound,
-      Value<bool>? alarm,
-      Value<bool>? status}) {
+      Value<bool>? alarm}) {
     return NotificationCompanion(
       id: id ?? this.id,
       date: date ?? this.date,
       title: title ?? this.title,
       contents: contents ?? this.contents,
-      sound: sound ?? this.sound,
       alarm: alarm ?? this.alarm,
-      status: status ?? this.status,
     );
   }
 
@@ -354,14 +285,8 @@ class NotificationCompanion extends UpdateCompanion<NotificationData> {
     if (contents.present) {
       map['contents'] = Variable<String>(contents.value);
     }
-    if (sound.present) {
-      map['sound'] = Variable<String>(sound.value);
-    }
     if (alarm.present) {
       map['alarm'] = Variable<bool>(alarm.value);
-    }
-    if (status.present) {
-      map['status'] = Variable<bool>(status.value);
     }
     return map;
   }
@@ -373,9 +298,7 @@ class NotificationCompanion extends UpdateCompanion<NotificationData> {
           ..write('date: $date, ')
           ..write('title: $title, ')
           ..write('contents: $contents, ')
-          ..write('sound: $sound, ')
-          ..write('alarm: $alarm, ')
-          ..write('status: $status')
+          ..write('alarm: $alarm')
           ..write(')'))
         .toString();
   }
@@ -400,9 +323,7 @@ typedef $$NotificationTableCreateCompanionBuilder = NotificationCompanion
   required DateTime date,
   required String title,
   required String contents,
-  required String sound,
   required bool alarm,
-  required bool status,
 });
 typedef $$NotificationTableUpdateCompanionBuilder = NotificationCompanion
     Function({
@@ -410,9 +331,7 @@ typedef $$NotificationTableUpdateCompanionBuilder = NotificationCompanion
   Value<DateTime> date,
   Value<String> title,
   Value<String> contents,
-  Value<String> sound,
   Value<bool> alarm,
-  Value<bool> status,
 });
 
 class $$NotificationTableFilterComposer
@@ -436,14 +355,8 @@ class $$NotificationTableFilterComposer
   ColumnFilters<String> get contents => $composableBuilder(
       column: $table.contents, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get sound => $composableBuilder(
-      column: $table.sound, builder: (column) => ColumnFilters(column));
-
   ColumnFilters<bool> get alarm => $composableBuilder(
       column: $table.alarm, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<bool> get status => $composableBuilder(
-      column: $table.status, builder: (column) => ColumnFilters(column));
 }
 
 class $$NotificationTableOrderingComposer
@@ -467,14 +380,8 @@ class $$NotificationTableOrderingComposer
   ColumnOrderings<String> get contents => $composableBuilder(
       column: $table.contents, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get sound => $composableBuilder(
-      column: $table.sound, builder: (column) => ColumnOrderings(column));
-
   ColumnOrderings<bool> get alarm => $composableBuilder(
       column: $table.alarm, builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<bool> get status => $composableBuilder(
-      column: $table.status, builder: (column) => ColumnOrderings(column));
 }
 
 class $$NotificationTableAnnotationComposer
@@ -498,14 +405,8 @@ class $$NotificationTableAnnotationComposer
   GeneratedColumn<String> get contents =>
       $composableBuilder(column: $table.contents, builder: (column) => column);
 
-  GeneratedColumn<String> get sound =>
-      $composableBuilder(column: $table.sound, builder: (column) => column);
-
   GeneratedColumn<bool> get alarm =>
       $composableBuilder(column: $table.alarm, builder: (column) => column);
-
-  GeneratedColumn<bool> get status =>
-      $composableBuilder(column: $table.status, builder: (column) => column);
 }
 
 class $$NotificationTableTableManager extends RootTableManager<
@@ -538,36 +439,28 @@ class $$NotificationTableTableManager extends RootTableManager<
             Value<DateTime> date = const Value.absent(),
             Value<String> title = const Value.absent(),
             Value<String> contents = const Value.absent(),
-            Value<String> sound = const Value.absent(),
             Value<bool> alarm = const Value.absent(),
-            Value<bool> status = const Value.absent(),
           }) =>
               NotificationCompanion(
             id: id,
             date: date,
             title: title,
             contents: contents,
-            sound: sound,
             alarm: alarm,
-            status: status,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
             required DateTime date,
             required String title,
             required String contents,
-            required String sound,
             required bool alarm,
-            required bool status,
           }) =>
               NotificationCompanion.insert(
             id: id,
             date: date,
             title: title,
             contents: contents,
-            sound: sound,
             alarm: alarm,
-            status: status,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

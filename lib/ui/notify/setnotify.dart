@@ -10,6 +10,7 @@ import 'package:pushnotification/extra/UniDialog.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:pushnotification/data/database/provider/NotificationProvider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:pushnotification/extra/NotificationHelper.dart';
 
 class SetNotify extends ConsumerStatefulWidget
 {
@@ -27,9 +28,7 @@ class _SetNotify extends ConsumerState<SetNotify> {
   TextEditingController timeinput = TextEditingController();
   TextEditingController alertName = TextEditingController();
   TextEditingController alertContents = TextEditingController();
-  TextEditingController fileName = TextEditingController();
   bool alert = true;
-  String filePath = '';
 
   @override
   void initState() {
@@ -207,23 +206,6 @@ class _SetNotify extends ConsumerState<SetNotify> {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.all(10),
-                              child: TextField(
-                                controller: fileName,
-                                readOnly: true,
-                                decoration: const InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    labelText: '파일 경로'
-                                ),
-                                onTap: () {
-                                  getFilePath();
-                                },
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            Container(
                               width: widgetWidth,
                               height: widgetHeight * 0.15 -
                                   AppBar().preferredSize.height,
@@ -259,30 +241,29 @@ class _SetNotify extends ConsumerState<SetNotify> {
                                   );
 
                                   final notification = ref.watch(notificationProvider);
-                                  notification.addNotification(
-                                      {
-                                        'date': selecteDate,
-                                        'title': alertName.text,
-                                        'contents': alertContents.text,
-                                        'sound': filePath,
-                                        'alarm': alert,
-                                        'status': true,
-                                      }
-                                  ).then((result) => {
-                                    if (result != null) {
-                                      UniDialog.showToast("등록 되었습니다.", 'short'),
-                                      resetInput(),
-                                    } else {
-                                      UniDialog.showToast("등록에 실패했습니다.", 'short'),
-                                    }
-                                  }).onError((error, stackTrace) => {
-                                    if(error.toString().contains("SqliteException(2067)")) {
-                                      UniDialog.showToast("이미 등록된 날짜입니다.", 'short'),
-                                    } else {
-                                      UniDialog.showToast("등록에 실패했습니다.", 'short'),
-                                    }
-                                  });
+                                  try {
+                                    final result = await notification.addNotificationWithAlarm({
+                                      'date': selecteDate,
+                                      'title': alertName.text,
+                                      'contents': alertContents.text,
+                                      'alarm': alert,
+                                    });
 
+                                    if (result != null) {
+                                      UniDialog.showToast("등록 되었습니다.", 'short');
+                                      resetInput();
+                                    } else {
+                                      UniDialog.showToast("등록에 실패했습니다.", 'short');
+                                    }
+                                  } catch (e) {
+                                    debugPrint('예외 발생: ${e.toString()}');
+
+                                    if (e.toString().contains("SqliteException(2067)")) {
+                                      UniDialog.showToast("이미 등록된 날짜입니다.", 'short');
+                                    } else {
+                                      UniDialog.showToast("등록에 실패했습니다.", 'short');
+                                    }
+                                  }
                                 },
                               ),
                             )
@@ -301,18 +282,5 @@ class _SetNotify extends ConsumerState<SetNotify> {
     timeinput.text = '';
     alertName.text = '';
     alertContents.text = '';
-    fileName.text = '';
-  }
-
-  void getFilePath() async {
-    String path = '';
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if(result != null) {
-      File file = File(result.files.single.path!);
-      setState(() {
-        filePath = file.path;
-        fileName.text = file.path;
-      });
-    }
   }
 }

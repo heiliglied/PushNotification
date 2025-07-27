@@ -12,7 +12,7 @@ class NotificationDao extends DatabaseAccessor<Database> with _$NotificationDaoM
 
   Stream<List<NotificationData>>? getNotNotifiedNotiPaginationStream(int page, int limit) {
     final query = (select(notification)
-      ..where((t) => t.status.equals(true) & t.date.isBiggerThanValue(DateTime.now()))
+      ..where((t) => t.date.isBiggerThanValue(DateTime.now()))
       ..limit(limit, offset: page * limit)
       ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.asc)]));
 
@@ -21,7 +21,7 @@ class NotificationDao extends DatabaseAccessor<Database> with _$NotificationDaoM
 
   Future<List<NotificationData>>? getNotificationList(int page, int limit) {
     final query = (select(notification)
-      ..where((t) => t.status.equals(true) & t.date.isBiggerThanValue(DateTime.now()))
+      ..where((t) => t.date.isBiggerThanValue(DateTime.now()))
       ..limit(limit, offset: page * limit)
       ..orderBy([(t) => OrderingTerm(expression: t.date, mode: OrderingMode.asc)]));
 

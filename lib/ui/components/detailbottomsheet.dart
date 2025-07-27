@@ -6,9 +6,11 @@ import 'package:intl/intl.dart';
 import 'package:pushnotification/data/database/database.dart';
 import 'package:pushnotification/extra/UniDialog.dart';
 import 'package:pushnotification/data/database/provider/NotificationProvider.dart';
+import 'package:pushnotification/extra/NotificationHelper.dart';
 
 class DetailBottomSheet {
   Future showBottomSheet(BuildContext context, NotificationData item, int index, WidgetRef ref) {
+    print(item);
     final notification = ref.read(notificationProvider);
     return showModalBottomSheet(
       context: context,
@@ -71,30 +73,6 @@ class DetailBottomSheet {
                           ),
                           Expanded(
                               child: Text(item.title, style: const TextStyle(fontSize: 18))
-                          )
-                        ],
-                      ),
-                    ),
-                    Container(
-                      constraints: BoxConstraints(
-                        minHeight: 40, // 최소 높이 설정
-                      ),
-                      decoration: const BoxDecoration(
-                          border: Border(
-                              bottom: BorderSide(
-                                color: Colors.lightBlue,
-                                width: 2,
-                              )
-                          )
-                      ),
-                      child: Row(
-                        children: [
-                          const SizedBox(
-                            width: 100,
-                            child: Text("알림음", style: TextStyle(fontSize: 18)),
-                          ),
-                          Expanded(
-                              child: Text(item.sound.split('/').last, style: const TextStyle(fontSize: 18))
                           )
                         ],
                       ),
@@ -190,15 +168,16 @@ class DetailBottomSheet {
                                       title: "경고",
                                       content: "알림을 끄시겠습니까?",
                                       positiveText: "예",
-                                      positive: () {
-                                        notification.updateStatus(item.id,
-                                          {
+                                      positive: () async {
+                                        try {
+                                          await notification.updateStatusWithAlarm(item.id, {
                                             'alarm': false,
-                                            'status': false,
-                                          }
-                                        );
-                                        Navigator.pop(context);
-                                        Navigator.pop(context, index);
+                                          });
+                                          Navigator.pop(context);
+                                          Navigator.pop(context, index);
+                                        } catch (e) {
+                                          UniDialog.showToast("알림 끄기 실패", 'short');
+                                        }
                                       },
                                       negativeText: "아니오",
                                   );
@@ -218,15 +197,17 @@ class DetailBottomSheet {
                                     title: "경고",
                                     content: "알림을 삭제하시겠습니까?",
                                     positiveText: "예",
-                                    positive: () {
-                                      notification.deleteNotification(item.id);
-                                      Navigator.pop(context);
-                                      Navigator.pop(context, index);
+                                    positive: () async {
+                                      try {
+                                        await notification.deleteNotificationWithAlarm(item.id);
+                                        Navigator.pop(context);
+                                        Navigator.pop(context, index);
+                                      } catch (e) {
+                                        UniDialog.showToast("알림 삭제 실패", 'short');
+                                      }
                                     },
                                     negativeText: "아니오",
                                   );
-
-
                                 }
                             )
                           ],

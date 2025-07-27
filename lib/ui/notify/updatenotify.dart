@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:pushnotification/ui/components/basedrawer.dart';
 import 'package:pushnotification/extra/UniDialog.dart';
 import 'package:pushnotification/data/database/provider/NotificationProvider.dart';
+import 'package:pushnotification/extra/NotificationHelper.dart';
 
 final dateinput = StateProvider<TextEditingController>((ref) => TextEditingController());
 
@@ -30,9 +31,7 @@ class _UpdateNotify extends ConsumerState<UpdateNotify> {
   TextEditingController timeinput = TextEditingController();
   TextEditingController alertName = TextEditingController();
   TextEditingController alertContents = TextEditingController();
-  TextEditingController fileName = TextEditingController();
   bool alert = false;
-  String filePath = '';
 
   late final notification = ref.read(notificationProvider);
 
@@ -45,7 +44,6 @@ class _UpdateNotify extends ConsumerState<UpdateNotify> {
             "date": value?.date,
             "title": value?.title,
             "contents": value?.contents,
-            "sound": value?.sound,
             "alarm": value?.alarm,
           }
       ),
@@ -224,23 +222,6 @@ class _UpdateNotify extends ConsumerState<UpdateNotify> {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.all(10),
-                              child: TextField(
-                                controller: fileName,
-                                readOnly: true,
-                                decoration: const InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    labelText: '파일 경로'
-                                ),
-                                onTap: () {
-                                  getFilePath();
-                                },
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            Container(
                               width: widgetWidth,
                               height: widgetHeight * 0.15 -
                                   AppBar().preferredSize.height,
@@ -277,30 +258,24 @@ class _UpdateNotify extends ConsumerState<UpdateNotify> {
                                       alertTime.minute
                                   );
 
-                                  notification.updateNotification(
-                                      notiId,
-                                      {
-                                        'date': selecteDate,
-                                        'title': alertName.text,
-                                        'contents': alertContents.text,
-                                        'sound': filePath,
-                                        'alarm': alert,
-                                      }
-                                  ).then((result) =>
-                                  {
-                                    UniDialog.showToast("수정 되었습니다.", 'short'),
-                                  }).onError((error, stackTrace) =>
-                                  {
-                                    if(error.toString().contains(
-                                        "SqliteException(2067)")){
-                                      UniDialog.showToast(
-                                          "이미 등록된 날짜입니다.", 'short'),
-                                    } else
-                                      {
-                                        UniDialog.showToast(
-                                            "수정에 실패했습니다.", 'short'),
-                                      }
-                                  });
+                                  try {
+                                    await notification.updateNotificationWithAlarm(notiId, {
+                                      'date': selecteDate,
+                                      'title': alertName.text,
+                                      'contents': alertContents.text,
+                                      'alarm': alert,
+                                    });
+
+                                    UniDialog.showToast("수정 되었습니다.", 'short');
+                                  } catch (error) {
+                                    if (error.toString().contains("SqliteException(2067)")) {
+                                      UniDialog.showToast("이미 등록된 날짜입니다.", 'short');
+                                    } else if (error.toString().contains("exact_alarms_not_permitted")) {
+                                      UniDialog.showToast("정확한 알람 권한이 필요합니다.", 'short');
+                                    } else {
+                                      UniDialog.showToast("수정에 실패했습니다.", 'short');
+                                    }
+                                  }
                                 },
                               ),
                             )
@@ -315,7 +290,6 @@ class _UpdateNotify extends ConsumerState<UpdateNotify> {
   }
 
   void setModifyData(Map notiData) {
-    print(notiData);
     String dateString = notiData['date'].toString();
     List timeSplit = dateString.split(' ');
     List timeList = timeSplit[1].split(':');
@@ -325,21 +299,10 @@ class _UpdateNotify extends ConsumerState<UpdateNotify> {
     timeinput.text = timeList[0] + ':' + timeList[1];
     alertName.text = notiData['title'];
     alertContents.text = notiData['contents'];
-    fileName.text = notiData['sound'];
     //ref.read(alertProvider.notifier).state = notiData['alarm'];
-    alert = notiData['alarm'];
-  }
-
-  void getFilePath() async {
-    String path = '';
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if(result != null) {
-      File file = File(result.files.single.path!);
-      setState(() {
-        filePath = file.path;
-        fileName.text = file.path;
-      });
-    }
+    setState(() {
+      alert = notiData['alarm'];
+    });
   }
 
   void resetInput() {
